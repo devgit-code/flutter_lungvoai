@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "964885347821",
+    "project_id": "mmlung",
+    "storage_bucket": "mmlung.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964885347821:android:16f7878baed9541876bbe4",
+        "android_client_info": {
+          "package_name": "com.lung.voicelung"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFRFt22aOd-NhEM3Jp27iEhhrFSgCKJzI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
