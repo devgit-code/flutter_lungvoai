@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:voicelung/screens/tasks/task1_screen.dart';
 import 'package:voicelung/screens/tasks/task2_screen.dart';
+import 'package:voicelung/screens/tasks/task3_screen.dart';
+import 'package:voicelung/screens/tasks/task4_screen.dart';
+import 'package:voicelung/screens/tasks/task5_screen.dart';
+import 'package:voicelung/screens/tasks/task6_screen.dart';
+import 'package:voicelung/screens/tasks/task7_screen.dart';
+import 'package:voicelung/screens/tasks/task8_screen.dart';
 
 class TaskPage extends StatelessWidget {
   @override
@@ -38,27 +44,45 @@ class TaskPage extends StatelessWidget {
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK3 - BREATHE/SPIRO", () {
-              // Add navigation for Task3Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task3Page()),
+              );
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK4 - RAINBOW", () {
-              // Add navigation for Task4Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task4Page()),
+              );
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK5 - DESCRIBE STH", () {
-              // Add navigation for Task5Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task5Page()),
+              );
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK6 - READ 3 SENTENCES", () {
-              // Add navigation for Task6Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task6Page()),
+              );
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK7 - DESCRIBE PIC", () {
-              // Add navigation for Task7Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task7Page()),
+              );
             }),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK8 - READ ACT/NO-ACT TEXT", () {
-              // Add navigation for Task8Page here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Task8Page()),
+              );
             }),
           ],
         ),
