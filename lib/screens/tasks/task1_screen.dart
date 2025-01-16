@@ -231,7 +231,6 @@ class _Task1PageState extends State<Task1Page> {
                     "SUBMIT",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(width: 10), // Adds some space between the text and spinner
@@ -275,20 +274,10 @@ class _Task1PageState extends State<Task1Page> {
   }
 
   Widget _buildProgressBar() {
-    return Column(
-      children: [
-        LinearProgressIndicator(
-          value: _recordDuration > 0 ? _recordDuration / _maxDuration : 0,
-          backgroundColor: Colors.grey,
-          color: Colors.blue,
-          minHeight: 8,
-        ),
-        const SizedBox(height: 8),
-        // Text(
-        //   _formatDuration(_recordDuration),
-        //   style: const TextStyle(fontSize: 16),
-        // ),
-      ],
+    return LinearProgressIndicator(
+      value: _recordDuration / _maxDuration,
+      backgroundColor: Colors.grey,
+      color: Colors.blue,
     );
   }
 }

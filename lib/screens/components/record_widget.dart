@@ -1,31 +1,30 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-class RecorderWidget extends StatefulWidget {
-  /// Instruction text to display above the buttons (e.g., say "/a:/" or "/o:/").
-  final String instructionText;
+class RecordWidget extends StatefulWidget {
+  final String taskTitle; // Title for the task
+  final Function onSubmit; // Callback for submission
 
-  /// Callback to be invoked after a successful recording upload.
-  /// In your multi-step page, this will trigger "go to next step" or "go home" logic.
-  final VoidCallback onSubmit;
-
-  const RecorderWidget({
-    Key? key,
-    required this.instructionText,
-    required this.onSubmit,
-  }) : super(key: key);
+  RecordWidget({required this.taskTitle, required this.onSubmit});
 
   @override
-  _RecorderWidgetState createState() => _RecorderWidgetState();
+  _RecordWidgetState createState() => _RecordWidgetState();
 }
 
-class _RecorderWidgetState extends State<RecorderWidget> {
+class _RecordWidgetState extends State<RecordWidget> {
   final FlutterSoundRecorder _audioRecorder = FlutterSoundRecorder();
   bool _isRecording = false;
+  bool _isFinish = false;
+  bool _isUploading = false;
   String? _filePath;
+  double _recordDuration = 0;
+  static const int _maxDuration = 120;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -36,26 +35,23 @@ class _RecorderWidgetState extends State<RecorderWidget> {
   @override
   void dispose() {
     _audioRecorder.closeRecorder();
+    _timer?.cancel();
     super.dispose();
   }
 
-  /// Initialize the FlutterSoundRecorder
   Future<void> _initializeRecorder() async {
     await _audioRecorder.openRecorder();
     await _audioRecorder.setSubscriptionDuration(const Duration(milliseconds: 500));
   }
 
-  /// Request microphone permission
   Future<bool> _requestPermission() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  /// Start recording
   Future<void> _startRecording() async {
-    debugPrint('Recording started');
     if (await _requestPermission()) {
-      final directory = Directory.systemTemp; // or use getTemporaryDirectory() from path_provider
+      final directory = Directory.systemTemp;
       final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.wav';
       _filePath = '${directory.path}/$fileName';
 
@@ -65,6 +61,16 @@ class _RecorderWidgetState extends State<RecorderWidget> {
       );
       setState(() {
         _isRecording = true;
+        _recordDuration = 0;
+      });
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          _recordDuration++;
+          if (_recordDuration >= _maxDuration) {
+            _stopRecording();
+          }
+        });
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,23 +79,26 @@ class _RecorderWidgetState extends State<RecorderWidget> {
     }
   }
 
-  /// Stop recording
   Future<void> _stopRecording() async {
     if (_isRecording) {
       await _audioRecorder.stopRecorder();
+      _timer?.cancel();
       setState(() {
+        _isFinish = true;
         _isRecording = false;
+        _recordDuration = 0;
       });
     }
   }
 
-  /// Delete the recording
   Future<void> _deleteRecording() async {
     if (_filePath != null && File(_filePath!).existsSync()) {
       await File(_filePath!).delete();
       setState(() {
         _filePath = null;
+        _isFinish = false;
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Recording deleted!')),
       );
@@ -100,31 +109,35 @@ class _RecorderWidgetState extends State<RecorderWidget> {
     }
   }
 
-  /// Upload to Firebase Storage & invoke onSubmit
   Future<void> _submitRecording() async {
     if (_filePath != null && File(_filePath!).existsSync()) {
       try {
+        setState(() {
+          _isUploading = true;
+        });
+
         final storageRef = FirebaseStorage.instance
             .ref()
             .child('recordings/${DateTime.now().millisecondsSinceEpoch}.wav');
 
         final uploadTask = storageRef.putFile(File(_filePath!));
-        await uploadTask.whenComplete(() {}); // Wait for upload completion
+        final snapshot = await uploadTask.whenComplete(() {});
 
-        final downloadUrl = await storageRef.getDownloadURL();
+        final downloadUrl = await snapshot.ref.getDownloadURL();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Recording uploaded! URL: $downloadUrl')),
+          const SnackBar(content: Text('Recording uploaded!')),
         );
 
         // Optionally delete the local file after upload
         await File(_filePath!).delete();
         setState(() {
           _filePath = null;
+          _isFinish = false;
+          _isUploading = false;
         });
 
-        // Trigger the onSubmit callback to move to the next step (or go home)
-        widget.onSubmit();
+        widget.onSubmit(); // Call the callback when submission is done
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading file: $e')),
@@ -140,25 +153,26 @@ class _RecorderWidgetState extends State<RecorderWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16.0),
-        // The instruction text
         Text(
-          widget.instructionText,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
+            widget.taskTitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.w400,
+            ),
         ),
-        const SizedBox(height: 24.0),
-        const Divider(),
-        const SizedBox(height: 24.0),
-
-        // Row of buttons: RECORD/STOP + DELETE
+        const SizedBox(height: 24),
+        _buildProgressBar(),
+        const SizedBox(height: 24),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildRoundButton(
               _isRecording ? "STOP" : "RECORD",
-              onPressed: () {
+              onPressed: _isFinish ? null : () {
                 if (_isRecording) {
                   _stopRecording();
                 } else {
@@ -166,37 +180,48 @@ class _RecorderWidgetState extends State<RecorderWidget> {
                 }
               },
             ),
-            _buildRoundButton("DELETE", onPressed: _deleteRecording),
+            _buildRoundButton("DELETE", onPressed: !_isFinish || _isUploading ? null : _deleteRecording),
           ],
         ),
-
         const Spacer(),
-
-        // The Submit button
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue[200],
             foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24.0),
+              borderRadius: BorderRadius.circular(32.0),
             ),
           ),
-          onPressed: _submitRecording,
-          child: const Text(
-            "SUBMIT",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+          onPressed: !_isFinish || _isUploading ? null : _submitRecording,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "SUBMIT",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 10), // Adds some space between the text and spinner
+              if (_isUploading) // Show spinner only when
+                const SizedBox(
+                  height: 16, // Fixed height for the spinner
+                  width: 16,  // Fixed width for the spinner
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
+                    strokeWidth: 2, // Spinner thickness
+                  ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 24.0),
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _buildRoundButton(String text, {required VoidCallback onPressed}) {
+  Widget _buildRoundButton(String text, {VoidCallback? onPressed}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue[200],
@@ -207,10 +232,15 @@ class _RecorderWidgetState extends State<RecorderWidget> {
         ),
       ),
       onPressed: onPressed,
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildProgressBar() {
+    return LinearProgressIndicator(
+      value: _recordDuration / _maxDuration,
+      backgroundColor: Colors.grey,
+      color: Colors.blue,
     );
   }
 }

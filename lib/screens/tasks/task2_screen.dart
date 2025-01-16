@@ -1,35 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
-import 'package:voicelung/screens/components/record_widget.dart';
+import 'package:voicelung/screens/components/record_widget.dart';  // Import the Task1Page component
 
 class Task2Page extends StatefulWidget {
-  const Task2Page({Key? key}) : super(key: key);
-
   @override
   _Task2PageState createState() => _Task2PageState();
 }
 
 class _Task2PageState extends State<Task2Page> {
-  // We have 3 steps (for the 3 vowels)
-  int _currentStep = 0;
+  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
 
-  // Each step has its own instruction text
-  final List<String> _vowelInstructions = [
-    "Press 'record' below and say '/a:/' 2-3 times (e.g., 'art'). Then press 'stop'.",
-    "Press 'record' below and say '/o:/' 2-3 times (e.g., 'dog'). Then press 'stop'.",
-    "Press 'record' below and say '/i:/' 2-3 times (e.g., 'eat'). Then press 'stop'.",
+  // Define task titles for each step
+  final List<String> taskTitles = [
+    "Press 'record' below and say '/a:/' 2-3 times as in word 'art'. Then press 'stop'.",
+    "Press 'record' below and say 'eeee....' 2-3 times as in eel. Then press 'stop'.",
+    "Press 'record' below and say 'ii....' 2-3 times as in ice. Then press 'stop'.",
+    "Press 'record' below and say 'o....' 2-3 times as in oak. Then press 'stop'.",
+    "Press 'record' below and say 'u....' 2-3 times as in unicorn. Then press 'stop'.",
+    "Press 'record' below and say '/u:/..' 2-3 times as in goose. Then press 'stop'.",
+    "Press 'record' below and say '/ɔ:/..' 2-3 times as in thought. Then press 'stop'.",
   ];
 
-  /// Moves to the next vowel step, or if done, navigate home.
-  void _goToNextStep() {
-    if (_currentStep < _vowelInstructions.length - 1) {
+  // Function to move to the next task after submission
+  void _moveToNextTask() {
+    if (currentStep < taskTitles.length - 1) {
       setState(() {
-        _currentStep++;
+        currentStep++;
       });
     } else {
-      // Last step is done, navigate to home (or tasks_screen)
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => TaskPage()),
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => TaskPage()), // Go to TaskPage
       );
     }
   }
@@ -48,12 +49,22 @@ class _Task2PageState extends State<Task2Page> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        // Show the VowelRecorderWidget for the current step
-        child: RecorderWidget(
-          instructionText: _vowelInstructions[_currentStep],
-          onSubmit: _goToNextStep,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded( // Ensures RecordWidget takes available space without causing layout issues
+                  child: RecordWidget(
+                    taskTitle: taskTitles[currentStep],
+                    onSubmit: _moveToNextTask, // Move to next task after submission
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
