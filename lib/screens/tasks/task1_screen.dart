@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,7 +15,14 @@ class Task1Page extends StatefulWidget {
 class _Task1PageState extends State<Task1Page> {
   final FlutterSoundRecorder _audioRecorder = FlutterSoundRecorder();
   bool _isRecording = false; // Track if recording is in progress
+  bool _isFinish = false; // Track if recording is in progress
+  bool _isUploading = false; // Track if recording is in progress
   String? _filePath; // Path to the recorded file
+  double _recordDuration = 0;
+  bool _initialRecordingPhase = true;
+  static const int _maxDuration = 120; // 2 minutes
+  static const int _initialPhaseDuration = 3; // 3 seconds
+  Timer? _timer;
 
   @override
   void initState() {
@@ -25,6 +33,7 @@ class _Task1PageState extends State<Task1Page> {
   @override
   void dispose() {
     _audioRecorder.closeRecorder();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -42,7 +51,6 @@ class _Task1PageState extends State<Task1Page> {
 
   /// Start recording
   Future<void> _startRecording() async {
-    debugPrint('started');
     if (await _requestPermission()) {
       final directory = Directory.systemTemp; // Temporary directory
       final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.wav';
@@ -53,6 +61,19 @@ class _Task1PageState extends State<Task1Page> {
         codec: Codec.pcm16WAV,);
       setState(() {
         _isRecording = true;
+        _recordDuration = 0;
+      });
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          _recordDuration++;
+          if (_recordDuration >= _initialPhaseDuration) {
+            _initialRecordingPhase = false;
+          }
+          if (_recordDuration >= _maxDuration) {
+            _stopRecording();
+          }
+        });
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,8 +86,11 @@ class _Task1PageState extends State<Task1Page> {
   Future<void> _stopRecording() async {
     if (_isRecording) {
       await _audioRecorder.stopRecorder();
+      _timer?.cancel();
       setState(() {
+        _isFinish = true;
         _isRecording = false;
+        _recordDuration = 0;
       });
     }
   }
@@ -77,6 +101,7 @@ class _Task1PageState extends State<Task1Page> {
       await File(_filePath!).delete(); // Delete the recorded file
       setState(() {
         _filePath = null;
+        _isFinish = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,6 +118,10 @@ class _Task1PageState extends State<Task1Page> {
   Future<void> _submitRecording() async {
     if (_filePath != null && File(_filePath!).existsSync()) {
       try {
+        setState(() {
+          _isUploading = true; // Set to true when the upload starts
+        });
+
         final storageRef = FirebaseStorage.instance
             .ref()
             .child('recordings/${DateTime.now().millisecondsSinceEpoch}.wav');
@@ -104,13 +133,15 @@ class _Task1PageState extends State<Task1Page> {
         final downloadUrl = await snapshot.ref.getDownloadURL();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Recording uploaded! URL: $downloadUrl')),
+          SnackBar(content: Text('Recording uploaded!')), //URL: $downloadUrl
         );
 
         // Optionally delete the local file after upload
         await File(_filePath!).delete();
         setState(() {
           _filePath = null;
+          _isFinish = false;
+          _isUploading = false;
         });
 
         Navigator.push(
@@ -128,6 +159,11 @@ class _Task1PageState extends State<Task1Page> {
       );
     }
   }
+
+  // String _formatDuration(double seconds) {
+  //   final duration = Duration(seconds: seconds.toInt());
+  //   return DateFormat('mm:ss').format(DateTime(0).add(duration));
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -158,14 +194,14 @@ class _Task1PageState extends State<Task1Page> {
               ),
             ),
             const SizedBox(height: 24.0),
-            const Divider(),
+            _buildProgressBar(),
             const SizedBox(height: 24.0),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildRoundButton(
                   _isRecording ? "STOP" : "RECORD",
-                  onPressed: () {
+                  onPressed: (_isFinish == true) ? null : () {
                     if (_isRecording) {
                       _stopRecording();
                     } else {
@@ -173,7 +209,7 @@ class _Task1PageState extends State<Task1Page> {
                     }
                   },
                 ),
-                _buildRoundButton("DELETE", onPressed: _deleteRecording),
+                _buildRoundButton("DELETE", onPressed: (_isFinish == false || _isUploading) ? null : _deleteRecording),
               ],
             ),
             const Spacer(),
@@ -187,13 +223,28 @@ class _Task1PageState extends State<Task1Page> {
                 ),
               ),
 
-              onPressed: _submitRecording,
-              child: const Text(
-                "SUBMIT",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+              onPressed: (_isFinish == false || _isUploading) ? null : _submitRecording,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "SUBMIT",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(width: 10), // Adds some space between the text and spinner
+                  if (_isUploading) // Show spinner only when
+                    const SizedBox(
+                      height: 16, // Fixed height for the spinner
+                      width: 16,  // Fixed width for the spinner
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
+                        strokeWidth: 2, // Spinner thickness
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 24.0),
@@ -203,7 +254,7 @@ class _Task1PageState extends State<Task1Page> {
     );
   }
 
-  Widget _buildRoundButton(String text, {required VoidCallback onPressed}) {
+  Widget _buildRoundButton(String text, {VoidCallback? onPressed}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue[200],
@@ -220,6 +271,24 @@ class _Task1PageState extends State<Task1Page> {
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildProgressBar() {
+    return Column(
+      children: [
+        LinearProgressIndicator(
+          value: _recordDuration > 0 ? _recordDuration / _maxDuration : 0,
+          backgroundColor: Colors.grey,
+          color: Colors.blue,
+          minHeight: 8,
+        ),
+        const SizedBox(height: 8),
+        // Text(
+        //   _formatDuration(_recordDuration),
+        //   style: const TextStyle(fontSize: 16),
+        // ),
+      ],
     );
   }
 }
