@@ -193,6 +193,13 @@ class _Task7PageState extends State<Task7Page> {
                 fontWeight: FontWeight.w400,
               ),
             ),
+            const SizedBox(height: 16.0), // Add space between the text and image
+            Image.asset(
+              'assets/describe.png', // Specify the path to your image asset
+              height: 200,  // Adjust the height as needed
+              width: double.infinity, // Adjust width to fit the container
+              fit: BoxFit.cover, // You can adjust the fit type (cover, fill, etc.)
+            ),
             const SizedBox(height: 24.0),
             _buildProgressBar(),
             const SizedBox(height: 24.0),
