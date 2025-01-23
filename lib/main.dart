@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicelung/screens/onboarding_screen.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
+import 'package:voicelung/user_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class SignupScreen extends StatefulWidget {
   @override
   _SignupScreenState createState() => _SignupScreenState();
@@ -36,8 +36,6 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _signupController = TextEditingController();
   int _currentId = 1;
-  // final String _idPrefix = 'id';
-  // int _currentNumber = 1;
 
   @override
   void initState() {
@@ -47,13 +45,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _initializeSignupIdentifier() {
     _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
-    // _signupController.text = _currentNumber.toString().padLeft(5, '0');
   }
 
   void _incrementSignupIdentifier() {
     setState(() {
-      _currentId++; // Increment ID
+      _currentId++;  // Increment ID
       _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
+      UserData.idName = _signupController.text;  // Update the static idName
     });
   }
 
@@ -119,7 +117,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 onPressed: () => _createAccount(context),
                 child: const Text(
-                  'CREATE ACCOUNT',
+                  'Sign UP',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -133,7 +131,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _createAccount(BuildContext context) async {
-    String username = _signupController.text.trim();
+    String username = UserData.idName.trim();  // Access the static idName
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +150,7 @@ class _SignupScreenState extends State<SignupScreen> {
         // User already exists, show an error or redirect
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TaskPage(userName: username)),
+          MaterialPageRoute(builder: (context) => TaskPage()),
         );
       } else {
         // Create a new user document with the username as the document ID

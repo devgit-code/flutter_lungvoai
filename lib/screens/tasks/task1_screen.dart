@@ -8,9 +8,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
 
 class Task1Page extends StatefulWidget {
-  final String userName; // Accept the username as a parameter
-
-  const Task1Page({Key? key, required this.userName}) : super(key: key);
 
   @override
   _Task1PageState createState() => _Task1PageState();
@@ -150,7 +147,7 @@ class _Task1PageState extends State<Task1Page> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => TaskPage(userName: userName)),
+          MaterialPageRoute(builder: (context) => TaskPage()),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
