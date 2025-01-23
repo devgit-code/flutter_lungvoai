@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'LUNGVOAI',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -27,8 +27,35 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SignupScreen extends StatelessWidget {
+
+class SignupScreen extends StatefulWidget {
+  @override
+  _SignupScreenState createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _signupController = TextEditingController();
+  int _currentId = 1;
+  // final String _idPrefix = 'id';
+  // int _currentNumber = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSignupIdentifier();
+  }
+
+  void _initializeSignupIdentifier() {
+    _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
+    // _signupController.text = _currentNumber.toString().padLeft(5, '0');
+  }
+
+  void _incrementSignupIdentifier() {
+    setState(() {
+      _currentId++; // Increment ID
+      _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +97,7 @@ class SignupScreen extends StatelessWidget {
             // Signup Identifier Text Field
             TextField(
               controller: _signupController,
+              readOnly: true, // Make the field read-only
               decoration: InputDecoration(
                 hintText: 'Signup identifier',
                 border: const UnderlineInputBorder(),
@@ -124,7 +152,7 @@ class SignupScreen extends StatelessWidget {
         // User already exists, show an error or redirect
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TaskPage()),
+          MaterialPageRoute(builder: (context) => TaskPage(userName: username)),
         );
       } else {
         // Create a new user document with the username as the document ID
@@ -133,10 +161,15 @@ class SignupScreen extends StatelessWidget {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
+        // Increment the ID for the next signup
+        _incrementSignupIdentifier();
+
         // Navigate to the Onboarding Page
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => OnboardingScreen(userName: username,)),
+          MaterialPageRoute(
+            builder: (context) => OnboardingScreen(userName: username),
+          ),
         );
       }
     } catch (e) {
