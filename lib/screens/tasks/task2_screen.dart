@@ -15,10 +15,6 @@ class _Task2PageState extends State<Task2Page> {
     "Press 'record' below and say '/a:/' 2-3 times as in word 'art'. Then press 'stop'.",
     "Press 'record' below and say 'eeee....' 2-3 times as in eel. Then press 'stop'.",
     "Press 'record' below and say 'ii....' 2-3 times as in ice. Then press 'stop'.",
-    "Press 'record' below and say 'o....' 2-3 times as in oak. Then press 'stop'.",
-    "Press 'record' below and say 'u....' 2-3 times as in unicorn. Then press 'stop'.",
-    "Press 'record' below and say '/u:/..' 2-3 times as in goose. Then press 'stop'.",
-    "Press 'record' below and say '/ɔ:/..' 2-3 times as in thought. Then press 'stop'.",
   ];
 
   // Function to move to the next task after submission
@@ -28,10 +24,7 @@ class _Task2PageState extends State<Task2Page> {
         currentStep++;
       });
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TaskPage()), // Go to TaskPage
-      );
+      Navigator.pop(context, true);
     }
   }
 

@@ -23,10 +23,7 @@ class _Task3PageState extends State<Task3Page> {
         currentStep++;
       });
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TaskPage()), // Go to TaskPage
-      );
+      Navigator.pop(context, true);
     }
   }
 

@@ -144,10 +144,7 @@ class _Task7PageState extends State<Task7Page> {
           _isUploading = false;
         });
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => TaskPage()),
-        );
+        Navigator.pop(context, true);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading file: $e')),
