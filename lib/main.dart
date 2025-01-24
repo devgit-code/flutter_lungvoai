@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicelung/screens/onboarding_screen.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
-import 'package:voicelung/user_data.dart';
+import 'package:voicelung/user_data.dart';  // Import the UserData class
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,24 +35,14 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _signupController = TextEditingController();
-  int _currentId = 1;
 
   @override
   void initState() {
     super.initState();
-    _initializeSignupIdentifier();
-  }
 
-  void _initializeSignupIdentifier() {
-    _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
-  }
-
-  void _incrementSignupIdentifier() {
-    setState(() {
-      _currentId++;  // Increment ID
-      _signupController.text = 'id${_currentId.toString().padLeft(5, '0')}';
-      UserData.idName = _signupController.text;  // Update the static idName
-    });
+    // Increase ID before loading the SignupScreen and set the new ID in the controller
+    UserData.increaseId();  // Increment the ID
+    _signupController.text = UserData.idName;  // Set the new ID as text in the controller
   }
 
   @override
@@ -76,7 +66,6 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 16.0),
-            // Mic Icon
             Center(
               child: Container(
                 padding: const EdgeInsets.all(16.0),
@@ -92,10 +81,10 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 32.0),
-            // Signup Identifier Text Field
+            // Signup Identifier TextField
             TextField(
               controller: _signupController,
-              readOnly: true, // Make the field read-only
+              readOnly: true,  // Make the field read-only
               decoration: InputDecoration(
                 hintText: 'Signup identifier',
                 border: const UnderlineInputBorder(),
@@ -115,7 +104,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(4.0),
                   ),
                 ),
-                onPressed: () => _createAccount(context),
+                onPressed: () => _createAccount(context),  // Create account action
                 child: const Text(
                   'Sign UP',
                   style: TextStyle(
@@ -131,7 +120,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _createAccount(BuildContext context) async {
-    String username = UserData.idName.trim();  // Access the static idName
+    String username = _signupController.text.trim();  // Get value from TextField
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -143,26 +132,18 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       final usersCollection = FirebaseFirestore.instance.collection('users');
 
-      // Check if the user already exists
+      // Check if the user already exists in Firestore
       DocumentSnapshot userDoc = await usersCollection.doc(username).get();
 
       if (userDoc.exists) {
-        // User already exists, show an error or redirect
+        // If user exists, navigate to TaskPage and set UserData
+        UserData.idName = username;  // Save the ID to UserData
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TaskPage()),
+          MaterialPageRoute(builder: (context) => TaskPage()),  // Navigate to TaskPage
         );
       } else {
-        // Create a new user document with the username as the document ID
-        await usersCollection.doc(username).set({
-          'name': username,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        // Increment the ID for the next signup
-        _incrementSignupIdentifier();
-
-        // Navigate to the Onboarding Page
+        // If user doesn't exist, navigate to OnboardingPage for registration
         Navigator.push(
           context,
           MaterialPageRoute(
