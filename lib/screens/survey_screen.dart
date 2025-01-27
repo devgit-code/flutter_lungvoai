@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:voicelung/user_data.dart';
+import 'package:voicelung/screens/tasks_screen.dart';
 
-class TaskPage extends StatelessWidget {
+class SurveyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,11 +32,11 @@ class TaskPage extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32.0),
+            const SizedBox(height: 64.0),
 
             // Task buttons
             _buildTaskButton("Full Survey", () {
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => TaskPage()),
               );

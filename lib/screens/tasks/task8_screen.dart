@@ -8,7 +8,7 @@ class Task8Page extends StatefulWidget {
 }
 
 class _Task8PageState extends State<Task8Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
+  int currentStep = 0;
 
   // Define task titles for each step
   final List<String> taskTitles = [
@@ -16,14 +16,19 @@ class _Task8PageState extends State<Task8Page> {
     "Press 'record' below and read the text with non-action words. Then press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths); // Pass the array of file paths
     }
   }
 
@@ -48,10 +53,10 @@ class _Task8PageState extends State<Task8Page> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded( // Ensures RecordWidget takes available space without causing layout issues
+                Expanded(
                   child: RecordWidget(
                     taskTitle: taskTitles[currentStep],
-                    onSubmit: _moveToNextTask, // Move to next task after submission
+                    onSubmit: _moveToNextTask,
                   ),
                 ),
               ],

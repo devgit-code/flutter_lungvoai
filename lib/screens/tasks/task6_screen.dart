@@ -8,23 +8,27 @@ class Task6Page extends StatefulWidget {
 }
 
 class _Task6PageState extends State<Task6Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
+  int currentStep = 0;
 
-  // Define task titles for each step
   final List<String> taskTitles = [
     "You will be asked to speak three sentences one by one. Press 'record' below and say 'London is the capital and largest city of England and the United Kingdom.'. Then press 'stop'.",
     "Press 'record' below and say 'The weather today is sunny, with lots of wind and a lot of clouds in the sky which will bring heavy rain and thunderstorms in the afternoon.'. Then press 'stop'.",
     "Press 'record' below and say 'London is the capital and largest city of England and the United Kingdom.'. Then press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths);
     }
   }
 
@@ -49,10 +53,10 @@ class _Task6PageState extends State<Task6Page> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded( // Ensures RecordWidget takes available space without causing layout issues
+                Expanded(
                   child: RecordWidget(
                     taskTitle: taskTitles[currentStep],
-                    onSubmit: _moveToNextTask, // Move to next task after submission
+                    onSubmit: _moveToNextTask,
                   ),
                 ),
               ],

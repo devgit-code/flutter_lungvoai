@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final String userName; // Accept the username as a parameter
+  final String userName;
 
   const OnboardingScreen({Key? key, required this.userName}) : super(key: key);
 

@@ -1,6 +1,6 @@
+// task1_screen.dart
 import 'package:flutter/material.dart';
-import 'package:voicelung/screens/tasks_screen.dart';
-import 'package:voicelung/screens/components/record_widget.dart';  // Import the Task1Page component
+import 'package:voicelung/screens/components/record_widget.dart';
 
 class Task1Page extends StatefulWidget {
   @override
@@ -8,21 +8,24 @@ class Task1Page extends StatefulWidget {
 }
 
 class _Task1PageState extends State<Task1Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
-
-  // Define task titles for each step
+  int currentStep = 0;
   final List<String> taskTitles = [
     "Press 'record' below and cough 10 times. Please do so in a quiet environment. Then press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths);
     }
   }
 
@@ -47,10 +50,12 @@ class _Task1PageState extends State<Task1Page> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded( // Ensures RecordWidget takes available space without causing layout issues
+                Expanded(
                   child: RecordWidget(
                     taskTitle: taskTitles[currentStep],
-                    onSubmit: _moveToNextTask, // Move to next task after submission
+                    onSubmit: (String? filePath) {
+                      _moveToNextTask(filePath);
+                    },
                   ),
                 ),
               ],

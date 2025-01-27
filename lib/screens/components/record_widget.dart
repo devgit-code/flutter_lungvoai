@@ -1,14 +1,13 @@
+// record_widget.dart
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class RecordWidget extends StatefulWidget {
-  final String taskTitle; // Title for the task
-  final Function onSubmit; // Callback for submission
+  final String taskTitle;
+  final Function(String?) onSubmit;
 
   RecordWidget({required this.taskTitle, required this.onSubmit});
 
@@ -20,7 +19,6 @@ class _RecordWidgetState extends State<RecordWidget> {
   final FlutterSoundRecorder _audioRecorder = FlutterSoundRecorder();
   bool _isRecording = false;
   bool _isFinish = false;
-  bool _isUploading = false;
   String? _filePath;
   double _recordDuration = 0;
   static const int _maxDuration = 120;
@@ -109,40 +107,12 @@ class _RecordWidgetState extends State<RecordWidget> {
     }
   }
 
-  Future<void> _submitRecording() async {
+  void _submitRecording() {
     if (_filePath != null && File(_filePath!).existsSync()) {
-      try {
-        setState(() {
-          _isUploading = true;
-        });
-
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('recordings/${DateTime.now().millisecondsSinceEpoch}.wav');
-
-        final uploadTask = storageRef.putFile(File(_filePath!));
-        final snapshot = await uploadTask.whenComplete(() {});
-
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recording uploaded!')),
-        );
-
-        // Optionally delete the local file after upload
-        await File(_filePath!).delete();
-        setState(() {
-          _filePath = null;
-          _isFinish = false;
-          _isUploading = false;
-        });
-
-        widget.onSubmit(); // Call the callback when submission is done
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading file: $e')),
-        );
-      }
+      widget.onSubmit(_filePath); // Pass the file path back to the parent
+      setState(() {
+        _isFinish = false;
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No recording to submit!')),
@@ -157,12 +127,12 @@ class _RecordWidgetState extends State<RecordWidget> {
       children: [
         const SizedBox(height: 16.0),
         Text(
-            widget.taskTitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.w400,
-            ),
+          widget.taskTitle,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w400,
+          ),
         ),
         const SizedBox(height: 24),
         _buildProgressBar(),
@@ -180,7 +150,7 @@ class _RecordWidgetState extends State<RecordWidget> {
                 }
               },
             ),
-            _buildRoundButton("DELETE", onPressed: !_isFinish || _isUploading ? null : _deleteRecording),
+            _buildRoundButton("DELETE", onPressed: !_isFinish || _isRecording ? null : _deleteRecording),
           ],
         ),
         const Spacer(),
@@ -193,24 +163,24 @@ class _RecordWidgetState extends State<RecordWidget> {
               borderRadius: BorderRadius.circular(32.0),
             ),
           ),
-          onPressed: !_isFinish || _isUploading ? null : _submitRecording,
+          onPressed: !_isFinish || _isRecording ? null : _submitRecording,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                "SUBMIT",
+                "NEXT",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 10), // Adds some space between the text and spinner
-              if (_isUploading) // Show spinner only when
+              const SizedBox(width: 10),
+              if (_isRecording)
                 const SizedBox(
-                  height: 16, // Fixed height for the spinner
-                  width: 16,  // Fixed width for the spinner
+                  height: 16,
+                  width: 16,
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
-                    strokeWidth: 2, // Spinner thickness
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    strokeWidth: 2,
                   ),
                 ),
             ],

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicelung/screens/onboarding_screen.dart';
 import 'package:voicelung/screens/tasks_screen.dart';
-import 'package:voicelung/user_data.dart';  // Import the UserData class
+import 'package:voicelung/user_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +41,8 @@ class _SignupScreenState extends State<SignupScreen> {
     super.initState();
 
     // Increase ID before loading the SignupScreen and set the new ID in the controller
-    UserData.increaseId();  // Increment the ID
-    _signupController.text = UserData.idName;  // Set the new ID as text in the controller
+    UserData.increaseId();
+    _signupController.text = UserData.idName;
   }
 
   @override
@@ -81,10 +81,9 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 32.0),
-            // Signup Identifier TextField
             TextField(
               controller: _signupController,
-              readOnly: true,  // Make the field read-only
+              readOnly: true,
               decoration: InputDecoration(
                 hintText: 'Signup identifier',
                 border: const UnderlineInputBorder(),
@@ -92,7 +91,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 32.0),
-            // Create Account Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -104,7 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(4.0),
                   ),
                 ),
-                onPressed: () => _createAccount(context),  // Create account action
+                onPressed: () => _createAccount(context),
                 child: const Text(
                   'Sign UP',
                   style: TextStyle(
@@ -120,7 +118,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _createAccount(BuildContext context) async {
-    String username = _signupController.text.trim();  // Get value from TextField
+    String username = _signupController.text.trim();
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,10 +135,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (userDoc.exists) {
         // If user exists, navigate to TaskPage and set UserData
-        UserData.idName = username;  // Save the ID to UserData
+        UserData.idName = username;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TaskPage()),  // Navigate to TaskPage
+          MaterialPageRoute(builder: (context) => TaskPage()),
         );
       } else {
         // If user doesn't exist, navigate to OnboardingPage for registration

@@ -14,14 +14,11 @@ class Task7Page extends StatefulWidget {
 
 class _Task7PageState extends State<Task7Page> {
   final FlutterSoundRecorder _audioRecorder = FlutterSoundRecorder();
-  bool _isRecording = false; // Track if recording is in progress
-  bool _isFinish = false; // Track if recording is in progress
-  bool _isUploading = false; // Track if recording is in progress
-  String? _filePath; // Path to the recorded file
+  bool _isRecording = false;
+  bool _isFinish = false;
+  String? _filePath;
   double _recordDuration = 0;
-  bool _initialRecordingPhase = true;
-  static const int _maxDuration = 120; // 2 minutes
-  static const int _initialPhaseDuration = 3; // 3 seconds
+  static const int _maxDuration = 120;
   Timer? _timer;
 
   @override
@@ -37,19 +34,16 @@ class _Task7PageState extends State<Task7Page> {
     super.dispose();
   }
 
-  /// Initialize the FlutterSoundRecorder
   Future<void> _initializeRecorder() async {
     await _audioRecorder.openRecorder();
     await _audioRecorder.setSubscriptionDuration(const Duration(milliseconds: 500));
   }
 
-  /// Request microphone permission
   Future<bool> _requestPermission() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  /// Start recording
   Future<void> _startRecording() async {
     if (await _requestPermission()) {
       final directory = Directory.systemTemp; // Temporary directory
@@ -67,9 +61,6 @@ class _Task7PageState extends State<Task7Page> {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
           _recordDuration++;
-          if (_recordDuration >= _initialPhaseDuration) {
-            _initialRecordingPhase = false;
-          }
           if (_recordDuration >= _maxDuration) {
             _stopRecording();
           }
@@ -82,7 +73,6 @@ class _Task7PageState extends State<Task7Page> {
     }
   }
 
-  /// Stop recording
   Future<void> _stopRecording() async {
     if (_isRecording) {
       await _audioRecorder.stopRecorder();
@@ -98,7 +88,7 @@ class _Task7PageState extends State<Task7Page> {
   /// Delete the recording
   Future<void> _deleteRecording() async {
     if (_filePath != null && File(_filePath!).existsSync()) {
-      await File(_filePath!).delete(); // Delete the recorded file
+      await File(_filePath!).delete();
       setState(() {
         _filePath = null;
         _isFinish = false;
@@ -114,53 +104,22 @@ class _Task7PageState extends State<Task7Page> {
     }
   }
 
-  /// Submit the recording to Firebase Storage
   Future<void> _submitRecording() async {
     if (_filePath != null && File(_filePath!).existsSync()) {
-      try {
-        setState(() {
-          _isUploading = true; // Set to true when the upload starts
-        });
+      List<String?> filePaths = [];
 
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('recordings/${DateTime.now().millisecondsSinceEpoch}.wav');
+      filePaths.add(_filePath);
+      setState(() {
+        _isFinish = false;
+      });
 
-        final uploadTask = storageRef.putFile(File(_filePath!));
-
-        final snapshot = await uploadTask.whenComplete(() {});
-
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Recording uploaded!')), //URL: $downloadUrl
-        );
-
-        // Optionally delete the local file after upload
-        await File(_filePath!).delete();
-        setState(() {
-          _filePath = null;
-          _isFinish = false;
-          _isUploading = false;
-        });
-
-        Navigator.pop(context, true);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading file: $e')),
-        );
-      }
+      Navigator.pop(context, filePaths);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No recording to submit!')),
       );
     }
   }
-
-  // String _formatDuration(double seconds) {
-  //   final duration = Duration(seconds: seconds.toInt());
-  //   return DateFormat('mm:ss').format(DateTime(0).add(duration));
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -190,12 +149,12 @@ class _Task7PageState extends State<Task7Page> {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            const SizedBox(height: 16.0), // Add space between the text and image
+            const SizedBox(height: 16.0),
             Image.asset(
-              'assets/describe.png', // Specify the path to your image asset
-              height: 200,  // Adjust the height as needed
-              width: double.infinity, // Adjust width to fit the container
-              fit: BoxFit.cover, // You can adjust the fit type (cover, fill, etc.)
+              'assets/describe.png',
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
             const SizedBox(height: 24.0),
             _buildProgressBar(),
@@ -213,7 +172,7 @@ class _Task7PageState extends State<Task7Page> {
                     }
                   },
                 ),
-                _buildRoundButton("DELETE", onPressed: (_isFinish == false || _isUploading) ? null : _deleteRecording),
+                _buildRoundButton("DELETE", onPressed: !_isFinish || _isRecording ? null : _deleteRecording),
               ],
             ),
             const Spacer(),
@@ -227,24 +186,24 @@ class _Task7PageState extends State<Task7Page> {
                 ),
               ),
 
-              onPressed: (_isFinish == false || _isUploading) ? null : _submitRecording,
+              onPressed: !_isFinish || _isRecording ? null : _submitRecording,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "SUBMIT",
+                    "NEXT",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 10), // Adds some space between the text and spinner
-                  if (_isUploading) // Show spinner only when
+                  const SizedBox(width: 10),
+                  if (_isRecording)
                     const SizedBox(
-                      height: 16, // Fixed height for the spinner
-                      width: 16,  // Fixed width for the spinner
+                      height: 16,
+                      width: 16,
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
-                        strokeWidth: 2, // Spinner thickness
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        strokeWidth: 2,
                       ),
                     ),
                 ],

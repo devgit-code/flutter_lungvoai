@@ -8,23 +8,27 @@ class Task2Page extends StatefulWidget {
 }
 
 class _Task2PageState extends State<Task2Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
+  int currentStep = 0;
 
-  // Define task titles for each step
   final List<String> taskTitles = [
     "Press 'record' below and say '/a:/' 2-3 times as in word 'art'. Then press 'stop'.",
     "Press 'record' below and say 'eeee....' 2-3 times as in eel. Then press 'stop'.",
     "Press 'record' below and say 'ii....' 2-3 times as in ice. Then press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths);
     }
   }
 
@@ -52,7 +56,9 @@ class _Task2PageState extends State<Task2Page> {
                 Expanded( // Ensures RecordWidget takes available space without causing layout issues
                   child: RecordWidget(
                     taskTitle: taskTitles[currentStep],
-                    onSubmit: _moveToNextTask, // Move to next task after submission
+                    onSubmit: (String? filePath) {
+                      _moveToNextTask(filePath); // Accumulate file paths
+                    },
                   ),
                 ),
               ],

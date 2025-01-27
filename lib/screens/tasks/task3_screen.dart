@@ -8,22 +8,26 @@ class Task3Page extends StatefulWidget {
 }
 
 class _Task3PageState extends State<Task3Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
+  int currentStep = 0;
 
-  // Define task titles for each step
   final List<String> taskTitles = [
     "Press 'record' below. Take a deep breath (with nose as much as you can) and slowly exhale (from mouth) making sure you empty your lungs fully. Please do so in a quiet environment. Then press 'stop'.",
     "Press 'record' below. Take a deep breath (with nose as much as you can) and exhale as quickly and forcefully as you can (from mouth) making sure you empty your lungs fully. Please do so in a quiet environment. Do this three times. Then press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths);
     }
   }
 

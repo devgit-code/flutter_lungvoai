@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:voicelung/main.dart';
 import 'package:voicelung/screens/tasks/task1_screen.dart';
@@ -9,6 +10,7 @@ import 'package:voicelung/screens/tasks/task6_screen.dart';
 import 'package:voicelung/screens/tasks/task7_screen.dart';
 import 'package:voicelung/screens/tasks/task8_screen.dart';
 import 'package:voicelung/user_data.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class TaskPage extends StatefulWidget {
   @override
@@ -16,14 +18,99 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPageState extends State<TaskPage> {
-  // List to track the completion state of tasks (true if completed)
   List<bool> taskCompletion = List.generate(8, (index) => false);
+  List<List<String?>> taskFilePaths = List.generate(8, (index) => []);
 
-  // Function to mark a task as completed
-  void markTaskCompleted(int taskIndex) {
+  bool _isUploading = false;
+
+  List<String> taskNames = [
+    "task_1_cough.wav",
+    "task_2_vowel_a.wav",
+    "task_2_vowel_e.wav",
+    "task_2_vowel_i.wav",
+    "task_3_breath.wav",
+    "task_3_spiro.wav",
+    "task_4_rainbow.wav",
+    "task_5_describe.wav",
+    "task_6_sentence_1.wav",
+    "task_6_sentence_2.wav",
+    "task_6_sentence_3.wav",
+    "task_7_describe_pic.wav",
+    "task_8_act_text.wav",
+    "task_8_non-act_text.wav",
+  ];
+
+  // Function to mark a task as completed and store the file paths
+  void markTaskCompleted(int taskIndex, List<String?> filePaths) {
     setState(() {
       taskCompletion[taskIndex] = true;
+      taskFilePaths[taskIndex] = filePaths;
     });
+  }
+
+  Future<void> _uploadAllRecordings() async {
+    setState(() {
+      _isUploading = true;
+    });
+
+    String baseDirectory = "recordings/${UserData.idName}";
+
+    // Fetch the last record_i
+    int nextRecordId = await _getNextRecordId(baseDirectory);
+    String newRecordDirectory = "$baseDirectory/record_$nextRecordId";
+
+    //upload files
+    List<String?> allFiles = taskFilePaths.expand((files) => files).toList();
+    if (allFiles.isNotEmpty) {
+      for (int i = 0; i < allFiles.length; i++) {
+        String? filePath = allFiles[i];
+
+        if (filePath != null) {
+          String taskFileName = taskNames[i];
+          String storagePath = "$newRecordDirectory/$taskFileName";
+          await _uploadRecording(filePath, storagePath);
+        }
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All recordings uploaded successfully!')),
+    );
+    setState(() {
+      _isUploading = false;
+    });
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SignupScreen()),
+    );
+  }
+
+  Future<void> _uploadRecording(String filePath, String storagePath) async {
+    final storage = FirebaseStorage.instance;
+
+    if (filePath != null) {
+      try {
+        File file = File(filePath);
+        await storage.ref(storagePath).putFile(file);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading file: $e')),
+        );
+      }
+    }
+  }
+
+  Future<int> _getNextRecordId(String baseDirectory) async {
+    final storage = FirebaseStorage.instance;
+    final ListResult result = await storage.ref(baseDirectory).listAll();
+
+    // Extract record IDs and determine the next one
+    List<int> recordIds = result.prefixes
+        .map((ref) => int.tryParse(ref.name.split("_").last) ?? 0)
+        .toList();
+
+    return recordIds.isEmpty ? 1 : (recordIds.reduce((a, b) => a > b ? a : b) + 1);
   }
 
   @override
@@ -46,7 +133,6 @@ class _TaskPageState extends State<TaskPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Displaying the User's ID (from UserData)
             Text(
               'Welcome, ${UserData.idName}',
               style: const TextStyle(
@@ -85,17 +171,29 @@ class _TaskPageState extends State<TaskPage> {
                   borderRadius: BorderRadius.circular(4.0),
                 ),
               ),
-              onPressed: _areAllTasksCompleted() ? () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignupScreen()),
-                );
+              onPressed: _areAllTasksCompleted() && !_isUploading ? () {
+                _uploadAllRecordings();
               } : null,  // Disable if not all tasks are completed
-              child: const Text(
-                'Finish Recording',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Finish Recording',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  if (_isUploading)
+                    const SizedBox(
+                      height: 16, // Fixed height for the spinner
+                      width: 16,  // Fixed width for the spinner
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
+                        strokeWidth: 2, // Spinner thickness
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -121,14 +219,14 @@ class _TaskPageState extends State<TaskPage> {
           ),
         ),
         onPressed: () async {
-          bool taskCompleted = await Navigator.push(
+          List<String?> filePaths = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => targetPage),
-          ) ?? false;
+          );
 
-          // After navigating back, mark the task as completed
-          if (taskCompleted) {
-            markTaskCompleted(taskIndex);
+          // After navigating back, mark the task as completed and store the file paths
+          if (filePaths.isNotEmpty) {
+            markTaskCompleted(taskIndex, filePaths);
           }
         },
         child: Text(

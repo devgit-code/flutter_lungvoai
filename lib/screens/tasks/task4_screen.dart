@@ -8,21 +8,25 @@ class Task4Page extends StatefulWidget {
 }
 
 class _Task4PageState extends State<Task4Page> {
-  int currentStep = 0; // Track current step (0: letter, 1: number, 2: sentence)
+  int currentStep = 0;
 
-  // Define task titles for each step
   final List<String> taskTitles = [
     "Please read the Rainbow Passage now. Once done press 'stop'.",
   ];
 
-  // Function to move to the next task after submission
-  void _moveToNextTask() {
+  List<String?> filePaths = [];
+
+  void _moveToNextTask(String? filePath) {
+    if (filePath != null) {
+      filePaths.add(filePath);
+    }
+
     if (currentStep < taskTitles.length - 1) {
       setState(() {
         currentStep++;
       });
     } else {
-      Navigator.pop(context, true);
+      Navigator.pop(context, filePaths); // Pass the array of file paths
     }
   }
 
@@ -47,10 +51,10 @@ class _Task4PageState extends State<Task4Page> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded( // Ensures RecordWidget takes available space without causing layout issues
+                Expanded(
                   child: RecordWidget(
                     taskTitle: taskTitles[currentStep],
-                    onSubmit: _moveToNextTask, // Move to next task after submission
+                    onSubmit: _moveToNextTask,
                   ),
                 ),
               ],
