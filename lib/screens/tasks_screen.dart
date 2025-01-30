@@ -59,7 +59,6 @@ class _TaskPageState extends State<TaskPage> {
     int nextRecordId = await _getNextRecordId(baseDirectory);
     String newRecordDirectory = "$baseDirectory/record_$nextRecordId";
 
-    //upload files
     List<String?> allFiles = taskFilePaths.expand((files) => files).toList();
     if (allFiles.isNotEmpty) {
       for (int i = 0; i < allFiles.length; i++) {
@@ -105,7 +104,6 @@ class _TaskPageState extends State<TaskPage> {
     final storage = FirebaseStorage.instance;
     final ListResult result = await storage.ref(baseDirectory).listAll();
 
-    // Extract record IDs and determine the next one
     List<int> recordIds = result.prefixes
         .map((ref) => int.tryParse(ref.name.split("_").last) ?? 0)
         .toList();
@@ -143,7 +141,6 @@ class _TaskPageState extends State<TaskPage> {
             ),
             const SizedBox(height: 32.0),
 
-            // Task buttons (Task1 to Task8)
             _buildTaskButton("TASK1 - COUGH", 0, Task1Page()),
             const SizedBox(height: 16.0),
             _buildTaskButton("TASK2 - VOWEL", 1, Task2Page()),
@@ -161,7 +158,6 @@ class _TaskPageState extends State<TaskPage> {
             _buildTaskButton("TASK8 - READ ACT/NO-ACT TEXT", 7, Task8Page()),
             const SizedBox(height: 32.0),
 
-            // Finish Recording Button (Only enabled when all tasks are completed)
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -173,7 +169,7 @@ class _TaskPageState extends State<TaskPage> {
               ),
               onPressed: _areAllTasksCompleted() && !_isUploading ? () {
                 _uploadAllRecordings();
-              } : null,  // Disable if not all tasks are completed
+              } : null,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -186,11 +182,11 @@ class _TaskPageState extends State<TaskPage> {
                   const SizedBox(width: 10),
                   if (_isUploading)
                     const SizedBox(
-                      height: 16, // Fixed height for the spinner
-                      width: 16,  // Fixed width for the spinner
+                      height: 16,
+                      width: 16,
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Spinner color
-                        strokeWidth: 2, // Spinner thickness
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        strokeWidth: 2,
                       ),
                     ),
                 ],
@@ -203,7 +199,7 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   bool _areAllTasksCompleted() {
-    return !taskCompletion.contains(false);  // Returns true if no task is incomplete
+    return !taskCompletion.contains(false);
   }
 
   Widget _buildTaskButton(String taskText, int taskIndex, Widget targetPage) {
@@ -224,7 +220,6 @@ class _TaskPageState extends State<TaskPage> {
             MaterialPageRoute(builder: (context) => targetPage),
           );
 
-          // After navigating back, mark the task as completed and store the file paths
           if (filePaths.isNotEmpty) {
             markTaskCompleted(taskIndex, filePaths);
           }

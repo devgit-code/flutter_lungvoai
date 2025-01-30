@@ -40,7 +40,6 @@ class _SignupScreenState extends State<SignupScreen> {
   void initState() {
     super.initState();
 
-    // Increase ID before loading the SignupScreen and set the new ID in the controller
     UserData.increaseId();
     _signupController.text = UserData.idName;
   }
@@ -129,8 +128,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       final usersCollection = FirebaseFirestore.instance.collection('users');
-
-      // Check if the user already exists in Firestore
       DocumentSnapshot userDoc = await usersCollection.doc(username).get();
 
       if (userDoc.exists) {
@@ -150,7 +147,6 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       }
     } catch (e) {
-      // Handle Firestore errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
